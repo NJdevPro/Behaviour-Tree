@@ -10,3 +10,5 @@ but it has several advantages over them:
 The main disadvantage is generally lower real time performance than state machines.
 
 This implementation works but is incomplete at the moment.
+
+Published under MIT License.
