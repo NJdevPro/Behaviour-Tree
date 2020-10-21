@@ -21,6 +21,8 @@ This implementation is a single .h file making it very easy to integrate.
 
 Each node has a NOTRUN status, and a run() method that returns to their parent node a final status. The final status can be either SUCCESS, FAILURE, or ERROR. Additionally, asynchronous nodes can have an intermediate RUNNING status indicating their parent nodes that they cannot return a final state as yet.
 
+# Detailed descrition
+
 ## Branching type nodes
 
 *Composite*: This type of Node follows the Composite Pattern, containing a list of 1...n children Nodes.
