@@ -13,7 +13,7 @@ Turing complete.
 This particular implementation allows to run subtrees in a separate thread in a
 fashion similar to futures.
 
-The main disadvantage of BT compared to state achines is they can be 
+The main disadvantage of BT compared to state machines is they can be 
 less responsive than state machines because the tree needs to be 
 constantly traversed.
 
