@@ -37,6 +37,8 @@ public:
 		Node(const std::string& name,
 			 const bool dontSkip = false) : _name(name), _dontSkip(dontSkip) {}
 
+        virtual ~Node() = default;
+
 		virtual Status run() = 0;
 		
 		const std::string getName() const { return _name; }
@@ -57,7 +59,9 @@ public:
 		std::vector<Node*> children;
 	public:
 		CompositeNode() = default;
-		~CompositeNode() { for (Node* child : children) { delete child; } }
+		virtual ~CompositeNode() {
+            for (Node* child : children) { delete child; }
+        }
 
 		const std::vector<Node*>& getChildren() const { 
 			return children; 
@@ -129,7 +133,7 @@ public:
 		// RUNNING if at least one of the children is RUNNING and no other is in SUCCESS or ERROR.
 		virtual Status run() override {
 			for (Node* child : getChildren()) {
-				Status s = Status::ERROR;
+				Status s;
 				if (child->dontSkip()) {
 					// run at each and every iteration
 					s = child->run();
@@ -156,6 +160,7 @@ public:
 				case Status::SUCCESS: continue;
 				case Status::FAILURE:
 				case Status::ERROR: _completed = true; return s;
+                default: break;
 				}
 			}
 			return Status::SUCCESS;  // All children suceeded, so the entire run() operation succeeds.
@@ -173,7 +178,7 @@ public:
 		Node* getChild() const { return child; }
 	public:
 		DecoratorNode() = default;
-		~DecoratorNode() { delete child; }
+		virtual ~DecoratorNode() { delete child; }
 		void setChild(Node* newChild) { child = newChild; }
 	};
 
@@ -210,7 +215,7 @@ public:
 			else {
 				// if the job has already been done, return the status
 				// else execute it
-				Status s = Status::ERROR;
+				Status s;
 				if (child->isCompleted()) {
 					s = child->getLastStatus();
 				}
@@ -234,7 +239,7 @@ public:
 	// what the child node actually returned. 
 	// These are useful in cases where you want to process a branch of a tree 
 	// where a Status::FAILURE is expected or anticipated, 
-	// but you don’t want to abandon processing of a sequence that branch sits on.
+	// but you donï¿½t want to abandon processing of a sequence that branch sits on.
 	class Succeed : public DecoratorNode {  
 	private:
 		virtual Status run() override {
@@ -249,7 +254,7 @@ public:
 			else {
 				// if the job has already done, return the status
 				// else execute it
-				Status s = Status::ERROR;
+				Status s;
 				if (child->isCompleted()) {
 					s = child->getLastStatus();
 				}
@@ -282,7 +287,7 @@ public:
 			else {
 				// if the job has already done, return the status
 				// else execute it
-				Status s = Status::ERROR;
+				Status s;
 				if (child->isCompleted()) {
 					s = child->getLastStatus();
 				}
@@ -352,7 +357,7 @@ public:
 	};
 
 	// Execute its child asynchronously in a separate thread,
-	// regularly yielding RUNNNING until it gets a final Status
+	// regularly yielding RUNNING until it gets a final Status
 	class Async : public DecoratorNode {
 	public:
 		Async(std::chrono::milliseconds poolTime = std::chrono::milliseconds(10)) : _statusPoolTime(poolTime) {}
@@ -417,12 +422,11 @@ public:
 	class RepeatUntil : public DecoratorNode {  
 	public:
 		RepeatUntil(const std::string& name,
-					const Status exitStatus,
-					const bool neverSkip = false) : _exitStatus(exitStatus) {}
+					const Status exitStatus) : _exitStatus(exitStatus) {}
 	private:
 		Status _exitStatus;
 		virtual Status run() override {
-			Status s = Status::ERROR;
+			Status s;
 			Node* child = getChild();
 			if (child->dontSkip()) {
 				// run at each and every iteration
