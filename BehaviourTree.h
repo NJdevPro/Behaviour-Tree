@@ -60,21 +60,21 @@ public:
 	public:
 		CompositeNode() = default;
 		virtual ~CompositeNode() {
-            for (Node* child : children) { delete child; }
+            for(size_t i = children.size()-1; i-- > 0;) { delete children[i]; }
         }
 
-		const std::vector<Node*>& getChildren() const { 
-			return children; 
+		const std::vector<Node*>& getChildren() const {
+			return children;
 		}
-		void addChild(Node* child) { 
-			children.emplace_back(child); 
+		void addChild(Node* child) {
+			children.emplace_back(child);
 		}
-		void addChildren(std::initializer_list<Node*>&& newChildren) { 
-			for (Node* child : newChildren) addChild(child); 
+		void addChildren(std::initializer_list<Node*>&& newChildren) {
+			for (Node* child : newChildren) addChild(child);
 		}
 		template <typename CONTAINER>
-		void addChildren(const CONTAINER& newChildren) { 
-			for (Node* child : newChildren) addChild(child); 
+		void addChildren(const CONTAINER& newChildren) {
+			for (Node* child : newChildren) addChild(child);
 		}
 	};
 
@@ -124,11 +124,11 @@ public:
 	};
 
 	// The generic Sequence implementation.
-	// If one child fails, then the entire sequence fails and quits immediately.  
+	// If one child fails, then the entire sequence fails and quits immediately.
 	// Status::SUCCESS only if all children succeed. Equivalent of a logical AND.
 	class Sequence : public CompositeNode {
 	public:
-		// If one child fails, then the entire operation fails.  
+		// If one child fails, then the entire operation fails.
 		// SUCCESS only if all children succeed.
 		// RUNNING if at least one of the children is RUNNING and no other is in SUCCESS or ERROR.
 		virtual Status run() override {
@@ -148,7 +148,7 @@ public:
 					else {
 						s = child->run();
 						_lastStatus = s;
-						if (s != Status::RUNNING) 
+						if (s != Status::RUNNING)
 							_completed = true;
 					}
 					if (s != Status::SUCCESS) {
@@ -168,10 +168,10 @@ public:
 	};
 
 	// A Decorator adds a functionality to its child node.
-	// Function is either to transform the Status it receives from the child, 
-	// to terminate the child, or repeat the processing of the child, depending 
+	// Function is either to transform the Status it receives from the child,
+	// to terminate the child, or repeat the processing of the child, depending
 	// on the type of decorator node.
-	class DecoratorNode : public Node {  
+	class DecoratorNode : public Node {
 	private:
 		Node* child;  // Only one child allowed
 	protected:
@@ -186,7 +186,7 @@ public:
 	class Root : public DecoratorNode {
 	private:
 		friend class BehaviourTree;
-		virtual Status run() override { 
+		virtual Status run() override {
 			Status s = getChild()->run();
 			while (s == Status::RUNNING)
 				s = getChild()->run();
@@ -194,10 +194,10 @@ public:
 		}
 	};
 
-	// Negates the Status of the child. 
-	// A child fails and it will return Status::SUCCESS to its parent, 
+	// Negates the Status of the child.
+	// A child fails and it will return Status::SUCCESS to its parent,
 	// or a child succeeds and it will return Status::FAILURE to the parent.
-	class Invert : public DecoratorNode {  
+	class Invert : public DecoratorNode {
 	private:
 		virtual Status run() override {
 			Node* child = getChild();
@@ -235,12 +235,12 @@ public:
 		}
 	};
 
-	// A succeeder will always return Status::SUCCESS, irrespective of 
-	// what the child node actually returned. 
-	// These are useful in cases where you want to process a branch of a tree 
-	// where a Status::FAILURE is expected or anticipated, 
+	// A succeeder will always return Status::SUCCESS, irrespective of
+	// what the child node actually returned.
+	// These are useful in cases where you want to process a branch of a tree
+	// where a Status::FAILURE is expected or anticipated,
 	// but you don�t want to abandon processing of a sequence that branch sits on.
-	class Succeed : public DecoratorNode {  
+	class Succeed : public DecoratorNode {
 	private:
 		virtual Status run() override {
 			Node* child = getChild();
@@ -273,9 +273,9 @@ public:
 
 	// The opposite of a Succeeder, always returning fail.
 	// Note that this can be achieved also by using an Inverter and setting its child to a Succeeder.
-	class Fail : public DecoratorNode {  
+	class Fail : public DecoratorNode {
 	private:
-		virtual Status run() override { 
+		virtual Status run() override {
 			Node* child = getChild();
 			if (child->dontSkip()) {
 				// run at each and every iteration
@@ -304,10 +304,10 @@ public:
 		}
 	};
 
-	// A repeater will reprocess its child node each time its child returns a Status. 
-	// These are often used at the very base of the tree, to make the tree to run continuously. 
+	// A repeater will reprocess its child node each time its child returns a Status.
+	// These are often used at the very base of the tree, to make the tree to run continuously.
 	// Repeaters may optionally run their children a set number of times before returning to their parent.
-	class Repeat : public DecoratorNode { 
+	class Repeat : public DecoratorNode {
 	public:
 		explicit Repeat(int num = NOT_FOUND) : _numRepeats(num) {}  // By default, never terminate.
 	private:
@@ -415,11 +415,11 @@ public:
 		}
 	};
 
-	// Like a repeater, these decorators will continue to reprocess their child. 
-	// That is until the child finally returns the expected status, at which point 
+	// Like a repeater, these decorators will continue to reprocess their child.
+	// That is until the child finally returns the expected status, at which point
 	// the repeater will return the status to its parent.
 	// The expected status must be either Status::SUCCESS or Status::FAILURE.
-	class RepeatUntil : public DecoratorNode {  
+	class RepeatUntil : public DecoratorNode {
 	public:
 		RepeatUntil(const std::string& name,
 					const Status exitStatus) : _exitStatus(exitStatus) {}
@@ -457,7 +457,7 @@ public:
 	};
 
 	/// The following are useful nodes
-	
+
 	// Stack nodes
 	template <typename T>
 	class StackNode : public Node {
@@ -468,7 +468,7 @@ public:
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class PushToStack : public StackNode<T> { 
+	class PushToStack : public StackNode<T> {
 	private:
 		T*& item;
 	public:
@@ -518,7 +518,7 @@ public:
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class StackIsEmpty : public StackNode<T> { 
+	class StackIsEmpty : public StackNode<T> {
 	public:
 		StackIsEmpty(std::stack<T*>& s) : StackNode<T>(s) {}
 	private:
@@ -532,7 +532,7 @@ public:
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class SetVariable : public BehaviourTree::Node { 
+	class SetVariable : public BehaviourTree::Node {
 	private:
 		T*& variable, *& object;  // Must use reference to pointer to work correctly.
 	public:
@@ -540,23 +540,23 @@ public:
 		virtual Status run() override {
 			variable = object;
 			// template specialization with T = Door needed for this line actually
-			std::cout << "The door that was used to get in is door #" << variable->doorNumber << "." << std::endl; 
+			std::cout << "The door that was used to get in is door #" << variable->doorNumber << "." << std::endl;
 			return Status::SUCCESS;
 		};
 	};
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class IsNull : public BehaviourTree::Node { 
+	class IsNull : public BehaviourTree::Node {
 	private:
 		T*& object;  // Must use reference to pointer to work correctly.
 	public:
 		IsNull(T*& t) : object(t) {}
-		virtual Status run() override { 
+		virtual Status run() override {
 			if (object == nullptr)
 				return Status::SUCCESS;
 			else
-				return Status::FAILURE; 
+				return Status::FAILURE;
 		}
 	};
 

@@ -22,7 +22,7 @@ class Building {
 private:
 	std::stack<Door*> doors;
 public:
-	Building(int numDoors) { initializeBuilding(numDoors); }
+	explicit Building(int numDoors) { initializeBuilding(numDoors); }
 	const std::stack<Door*>& getDoors() const { return doors; }
 private:
 	void initializeBuilding(int numDoors) {
@@ -33,7 +33,7 @@ private:
 
 struct DataContext {  // Acts as a storage for arbitrary variables that are interpreted and altered by the nodes.
 	std::stack<Door*> doors;
-	Door* currentDoor;
+	Door* currentDoor = nullptr;
 	Door* usedDoor = nullptr;
 };
 
@@ -42,10 +42,10 @@ private:
 	std::string name;
 	int probabilityOfSuccess;
 public:
-	DoorAction(const std::string newName, int prob) : name(newName), probabilityOfSuccess(prob) {}
+	DoorAction(const std::string& newName, int prob) : name(newName), probabilityOfSuccess(prob) {}
 private:
-	virtual BehaviourTree::Status run() override {
-		std::this_thread::sleep_for(std::chrono::milliseconds(500));
+	BehaviourTree::Status run() override {
+		//std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		if (std::rand() % 100 < probabilityOfSuccess) {
 			std::cout << name << " succeeded." << std::endl;
 			return BehaviourTree::Status::SUCCESS;
@@ -56,7 +56,7 @@ private:
 };
 
 int main() {
-	std::srand(std::time(nullptr));
+	std::srand(42);
 
 	BehaviourTree behaviorTree;
 	DataContext data;
