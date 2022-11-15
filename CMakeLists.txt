@@ -12,4 +12,5 @@ set(CMAKE_CXX_FLAGS "-Wall")
 add_executable(BehaviourTree_test BehaviourTree_test.cpp)
 target_link_libraries(BehaviourTree_test -lpthread)
 
+enable_testing()
 add_test(NAME BehaviourTree_example COMMAND BehaviourTree_test)
