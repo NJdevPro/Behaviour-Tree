@@ -7,7 +7,7 @@ project(BehaviourTree
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "-Wall")
 
-add_executable(BehaviourTree_test BehaviourTree_test.cpp)
+add_executable(BehaviourTree_test src/BehaviourTree_test.cpp)
 target_link_libraries(BehaviourTree_test -lpthread)
 
 enable_testing()
