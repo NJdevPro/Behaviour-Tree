@@ -60,7 +60,7 @@ public:
 	public:
 		CompositeNode() = default;
 		virtual ~CompositeNode() {
-            for(size_t i = children.size()-1; i-- > 0;) { delete children[i]; }
+            children.clear();
         }
 
 		const std::vector<Node*>& getChildren() const {
@@ -178,7 +178,12 @@ public:
 		Node* getChild() const { return child; }
 	public:
 		DecoratorNode() = default;
-		virtual ~DecoratorNode() { delete child; }
+		virtual ~DecoratorNode() {
+            if (child) {
+                delete child;
+                child = nullptr;
+            }
+        }
 		void setChild(Node* newChild) { child = newChild; }
 	};
 
@@ -360,9 +365,9 @@ public:
 	// regularly yielding RUNNING until it gets a final Status
 	class Async : public DecoratorNode {
 	public:
-		Async(std::chrono::milliseconds poolTime = std::chrono::milliseconds(10)) : _statusPoolTime(poolTime) {}
+		Async(std::chrono::microseconds poolTime = std::chrono::microseconds(10)) : _statusPoolTime(poolTime) {}
 	private:
-		std::chrono::milliseconds _statusPoolTime;
+		std::chrono::microseconds _statusPoolTime;
 
 		virtual Status run() override {
 			Node* child = getChild();
