@@ -53,17 +53,18 @@ The status is FAILURE only if all children fail. Equivalent of a logical OR.
 
 ### Memory type nodes
 
-These nodes may require some adaptation to your particular usage.
+These nodes persist data between node runs.
+There are two sorts of memory: a thread safe stack and variables.
 
-*SetVariable*: associate a memory object to a variable
+*SetVar*: associate a memory object to a variable
 
 *IsNull*: return SUCCESS if the object passed in argument is nullptr.
 
 *StackNode*: this node implements a stack.
 
-*PushToStack*: push an object on the stack node
+*Push*: push an object on the stack node
 
-*PopFromStack*: pop an object from the stack node
+*Pop*: pop an object from the stack node
 
 
 

@@ -1,14 +1,12 @@
 // BehaviorTree_test.cpp : Defines the entry point for the console application.
 //
 
-#include "BehaviourTree.h"
-
 #include <iostream>
 #include <list>
-#include <stack>
 #include <string>
 #include <cstdlib>
-#include <ctime>
+#include "ConcurrentStack.h"
+#include "BehaviourTree.h"
 
 
 // 
@@ -20,10 +18,10 @@ struct Door {
 
 class Building {
 private:
-	std::stack<Door*> doors;
+	ConcurrentStack<Door*> doors;
 public:
 	explicit Building(int numDoors) { initializeBuilding(numDoors); }
-	const std::stack<Door*>& getDoors() const { return doors; }
+	const ConcurrentStack<Door*>& getDoors() const { return doors; }
 private:
 	void initializeBuilding(int numDoors) {
 		for (int i = 0; i < numDoors; i++)
@@ -31,8 +29,9 @@ private:
 	}
 };
 
-struct DataContext {  // Acts as a storage for arbitrary variables that are interpreted and altered by the nodes.
-	std::stack<Door*> doors;
+// Acts as a storage for arbitrary variables that are interpreted and altered by the nodes.
+struct DataContext {
+	ConcurrentStack<Door*> doors;
 	Door* currentDoor = nullptr;
 	Door* usedDoor = nullptr;
 };
@@ -42,10 +41,10 @@ private:
 	std::string name;
 	int probabilityOfSuccess;
 public:
-	DoorAction(const std::string& newName, int prob) : name(newName), probabilityOfSuccess(prob) {}
+	DoorAction(const std::string& newName, int prob) :
+    name(newName), probabilityOfSuccess(prob) {}
 private:
 	BehaviourTree::Status run() override {
-		//std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		if (std::rand() % 100 < probabilityOfSuccess) {
 			std::cout << name << " succeeded." << std::endl;
 			return BehaviourTree::Status::SUCCESS;
@@ -68,8 +67,8 @@ int main() {
 	BehaviourTree::Succeed succeeder;
 	BehaviourTree::RepeatUntil untilFail("", BehaviourTree::Status::FAILURE);
 	BehaviourTree::GetStack<Door> getDoorStackFromBuilding(data.doors, building.getDoors());
-	BehaviourTree::PopFromStack<Door> popFromStack(data.currentDoor, data.doors);
-	BehaviourTree::SetVariable<Door> setVariable(data.usedDoor, data.currentDoor);
+	BehaviourTree::Pop<Door> popFromStack(data.currentDoor, data.doors);
+	BehaviourTree::SetVar<Door> setVariable(data.usedDoor, data.currentDoor);
 	BehaviourTree::IsNull<Door> isNull(data.usedDoor);
 	BehaviourTree::Async async;
 

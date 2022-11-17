@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <sstream>
 #include <future>
+#include "ConcurrentStack.h"
 
 /// A C++11 Implementation of the Behavior Tree design pattern
 /// 
@@ -366,7 +367,7 @@ public:
 	// regularly yielding RUNNING until it gets a final Status
 	class Async : public DecoratorNode {
 	public:
-		Async(std::chrono::microseconds poolTime = std::chrono::microseconds(1000)) : _statusPoolTime(poolTime) {}
+		Async(std::chrono::microseconds poolTime = std::chrono::microseconds(10)) : _statusPoolTime(poolTime) {}
 	private:
 		std::chrono::microseconds _statusPoolTime;
 
@@ -468,17 +469,17 @@ public:
 	template <typename T>
 	class StackNode : public Node {
 	protected:
-		std::stack<T*>& stack;  // Must be reference to a stack to work.
-		StackNode(std::stack<T*>& s) : stack(s) {}
+		ConcurrentStack<T*>& stack;  // Must be reference to a stack to work.
+		StackNode(ConcurrentStack<T*>& s) : stack(s) {}
 	};
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class PushToStack : public StackNode<T> {
+	class Push : public StackNode<T> {
 	private:
 		T*& item;
 	public:
-		PushToStack(T*& t, std::stack<T*>& s) : StackNode<T>(s), item(t) {}
+		Push(T*& t, ConcurrentStack<T*>& s) : StackNode<T>(s), item(t) {}
 	private:
 		virtual Status run() override {
 			this->stack.push(item);
@@ -486,33 +487,34 @@ public:
 		}
 	};
 
-	// Specific type of leaf (hence has no child).
+	// Return a copy of the stack
 	template <typename T>
 	class GetStack : public StackNode<T> {
 	private:
-		const std::stack<T*>& obtainedStack;
+		const ConcurrentStack<T*>& obtainedStack;
 		T* object;
 	public:
-		GetStack(std::stack<T*>& s, const std::stack<T*>& o, T* t = nullptr) : StackNode<T>(s), obtainedStack(o), object(t) {}
+		GetStack(ConcurrentStack<T*>& s, const ConcurrentStack<T*>& o, T* t = nullptr) :
+        StackNode<T>(s), obtainedStack(o), object(t) {}
 	private:
 		virtual Status run() override {
 			this->stack = obtainedStack;
 			if (object)
-				this->stack.push(object);
+				this->stack.push(std::move(object));
 			return Status::SUCCESS;
 		}
 	};
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class PopFromStack : public StackNode<T> {
+	class Pop : public StackNode<T> {
 	private:
 		T*& item;
 	public:
-		PopFromStack(T*& t, std::stack<T*>& s) : StackNode<T>(s), item(t) {}
+		Pop(T*& t, ConcurrentStack<T*>& s) : StackNode<T>(s), item(t) {}
 	private:
 		virtual Status run() override {
-			if (this->stack.empty())
+			if (this->stack.is_empty())
 				return Status::FAILURE;
 			item = this->stack.top();
 			// template specialization with T = Door needed for this line actually
@@ -526,7 +528,7 @@ public:
 	template <typename T>
 	class StackIsEmpty : public StackNode<T> {
 	public:
-		StackIsEmpty(std::stack<T*>& s) : StackNode<T>(s) {}
+		StackIsEmpty(ConcurrentStack<T*>& s) : StackNode<T>(s) {}
 	private:
 		virtual Status run() override {
 			if (this->stack.empty())
@@ -538,12 +540,14 @@ public:
 
 	// Specific type of leaf (hence has no child).
 	template <typename T>
-	class SetVariable : public BehaviourTree::Node {
+	class SetVar : public BehaviourTree::Node {
 	private:
+        std::mutex mutex_;
 		T*& variable, *& object;  // Must use reference to pointer to work correctly.
 	public:
-		SetVariable(T*& t, T*& obj) : variable(t), object(obj) {}
+		SetVar(T*& t, T*& obj) : variable(t), object(obj) {}
 		virtual Status run() override {
+            std::lock_guard<std::mutex> mlock(mutex_);
 			variable = object;
 			// template specialization with T = Door needed for this line actually
 			std::cout << "The door that was used to get in is door #" << variable->doorNumber << "." << std::endl;
