@@ -29,6 +29,8 @@ private:
 	}
 };
 
+typedef BehaviourTree BT;
+
 // Acts as a storage for arbitrary variables that are interpreted and altered by the nodes.
 struct DataContext {
 	ConcurrentStack<Door*> doors;
@@ -36,7 +38,7 @@ struct DataContext {
 	Door* usedDoor = nullptr;
 };
 
-class DoorAction : public BehaviourTree::Node {
+class DoorAction : public BT::Node {
 private:
 	std::string name;
 	int probabilityOfSuccess;
@@ -44,33 +46,33 @@ public:
 	DoorAction(const std::string& newName, int prob) :
     name(newName), probabilityOfSuccess(prob) {}
 private:
-	BehaviourTree::Status run() override {
+	BT::Status run() override {
 		if (std::rand() % 100 < probabilityOfSuccess) {
 			std::cout << name << " succeeded." << std::endl;
-			return BehaviourTree::Status::SUCCESS;
+			return BT::Status::SUCCESS;
 		}
 		std::cout << name << " failed." << std::endl;
-		return BehaviourTree::Status::FAILURE;
+		return BT::Status::FAILURE;
 	}
 };
 
 int main() {
 	std::srand(42);
 
-	BehaviourTree behaviorTree;
+	BT behaviorTree;
 	DataContext data;
 
 	Building building(5);  // Building with 5 doors to get in.
-	BehaviourTree::Sequence sequence[3];
-	BehaviourTree::Select selector;
-	BehaviourTree::Invert inverter[2];
-	BehaviourTree::Succeed succeeder;
-	BehaviourTree::RepeatUntil untilFail("", BehaviourTree::Status::FAILURE);
-	BehaviourTree::GetStack<Door> getDoorStackFromBuilding(data.doors, building.getDoors());
-	BehaviourTree::Pop<Door> popFromStack(data.currentDoor, data.doors);
-	BehaviourTree::SetVar<Door> setVariable(data.usedDoor, data.currentDoor);
-	BehaviourTree::IsNull<Door> isNull(data.usedDoor);
-	BehaviourTree::Async async;
+	BT::Sequence sequence[3];
+	BT::Select selector;
+	BT::Invert inverter[2];
+	BT::Succeed succeeder;
+	BT::RepeatUntil untilFail("", BT::Status::FAILURE);
+	BT::GetStack<Door> getDoorStackFromBuilding(data.doors, building.getDoors());
+	BT::Pop<Door> popFromStack(data.currentDoor, data.doors);
+	BT::SetVar<Door> setVariable(data.usedDoor, data.currentDoor);
+	BT::IsNull<Door> isNull(data.usedDoor);
+	BT::Async async;
 
 	// Probabilities of success
 	DoorAction walkToDoor("Walk to door", 99), 
@@ -93,7 +95,7 @@ int main() {
 	selector.addChildren({ &openDoor, &unlockDoor, &smashDoor });
 	succeeder.setChild(&closeDoor);
 
-	if (behaviorTree.run() == BehaviourTree::Status::SUCCESS)
+	if (behaviorTree.run() == BT::Status::SUCCESS)
 		std::cout << "Congratulations!  You made it into the building!" << std::endl;
 	else
 		std::cout << "Sorry.  You have failed to enter the building." << std::endl;
